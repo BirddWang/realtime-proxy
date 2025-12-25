@@ -3,7 +3,7 @@ Realtime-Proxy FrontEnd Docs
 
 Connection
 ---
-- WebSocket URL: `ws://<HOST>:8080/ws`
+- WebSocket URL: `wss://ilalab.ai.cgu.edu.tw/realtime/ws`
 - Query Parameters:
     - `raw=0`: `server` 會回傳帶有`Generation ID` 的資料，用於處理打斷邏輯。
     - `raw=1`: 只回傳PCM音訊，無法處理插話打斷
@@ -50,3 +50,9 @@ Audio Format
 - Byte 0 `0x01` 固定標誌
 - Byte 1-8 `Generation ID` 該音訊的編號（編號大小決定新舊，越新越大）
 - Byte 9-End: PCM Audio
+
+Authentication
+---
+- 使用 HTTP Basic Auth
+- WebSocket 連線時需在 URL 中帶入帳密，或透過 HTTP Header
+- 範例：`wss://<USERNAME>:<PASSWORD>@ilalab.ai.cgu.edu.tw/realtime/ws`
