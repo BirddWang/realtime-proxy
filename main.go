@@ -104,9 +104,8 @@ func handleClientWS(w http.ResponseWriter, r *http.Request) {
 	openaiWriter.SendControl(openAIEvent{
 		"type": "session.update",
 		"session": openAIEvent{
-			"instructions": "你是一個台灣人，請用台灣繁體中文、台灣口語習慣與使用者自然對話。避免使用中國大陸用語（如「視頻」「軟件」「信息」），改用台灣用語（如「影片」「軟體」「資訊」）。語氣親切自然,像台灣朋友聊天一樣。",
-
-			"modalities": []string{"text", "audio"},
+			"instructions": "你是一個台灣人，請用台灣繁體中文、台灣口語習慣與使用者自然對話。避免使用中國大陸用語（如「視頻」「軟件」「信息」），改用台灣用語（如「影片」「軟體」「資訊」）。語氣親切自然，像台灣朋友聊天一樣。對話只需溫柔有愛心的簡短回覆就好。",
+			"modalities": []string{"audio"},
 
 			"input_audio_format":  "pcm16",
 			"output_audio_format": "pcm16",
