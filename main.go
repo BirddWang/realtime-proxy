@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	openAIRealtimeURL = "wss://api.openai.com/v1/realtime?model=gpt-realtime"
+	openAIRealtimeURL = "wss://nura-resource.cognitiveservices.azure.com/openai/realtime?api-version=2024-10-01-preview&deployment=gpt-realtime"
 
 	// Realtime audio/pcm rate 最低 >= 24000（你已經踩過 16000 會被拒絕）
 	rateHz = 24000
@@ -104,28 +104,23 @@ func handleClientWS(w http.ResponseWriter, r *http.Request) {
 	openaiWriter.SendControl(openAIEvent{
 		"type": "session.update",
 		"session": openAIEvent{
-			"type":         "realtime",
-			"instructions": "你是一個台灣人，請用台灣繁體中文、台灣口語習慣與使用者自然對話。避免使用中國大陸用語（如「視頻」「軟件」「信息」），改用台灣用語（如「影片」「軟體」「資訊」）。語氣親切自然，像台灣朋友聊天一樣。",
-			"output_modalities": []string{
-				"audio",
+			"instructions": "你是一個台灣人，請用台灣繁體中文、台灣口語習慣與使用者自然對話。避免使用中國大陸用語（如「視頻」「軟件」「信息」），改用台灣用語（如「影片」「軟體」「資訊」）。語氣親切自然,像台灣朋友聊天一樣。",
+
+			"modalities": []string{"text", "audio"},
+
+			"input_audio_format":  "pcm16",
+			"output_audio_format": "pcm16",
+
+			"turn_detection": openAIEvent{
+				"type":                "server_vad",
+				"threshold":           0.5,
+				"prefix_padding_ms":   300,
+				"silence_duration_ms": 600,
 			},
-			"audio": openAIEvent{
-				"input": openAIEvent{
-					"format": openAIEvent{"type": "audio/pcm", "rate": rateHz},
-					"turn_detection": openAIEvent{
-						"type":                "server_vad",
-						"threshold":           0.5,
-						"prefix_padding_ms":   300,
-						"silence_duration_ms": 600,
-						"create_response":     true, // ✅ 關鍵：自動產生回覆
-					},
-				},
-				"output": openAIEvent{
-					"format": openAIEvent{"type": "audio/pcm", "rate": rateHz},
-					"voice":  "ash",  // Enthusiastic, energetic, and lively
-					"speed":  1,
-				},
-			},
+
+			"voice":                      "ash",
+			"temperature":                0.8,
+			"max_response_output_tokens": 4096,
 		},
 	})
 	log.Println("→ session.update sent (server VAD enabled)")
@@ -220,7 +215,7 @@ func handleClientWS(w http.ResponseWriter, r *http.Request) {
 					clientWriteMu.Unlock()
 				}
 
-			case "response.output_audio.delta":
+			case "response.audio.delta": //Azure Ver. | OpenAI Ver. response.output_audio.delta
 				if !allowAudio {
 					// barge-in 期間：丟掉舊 response 的 audio（避免 tail 音）
 					continue
@@ -315,9 +310,10 @@ func handleClientWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func dialOpenAIRealtime() (*websocket.Conn, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
+	apiKey := os.Getenv("AZURE_OPENAI_API_KEY")
 	h := http.Header{}
-	h.Set("Authorization", "Bearer "+apiKey)
+	// h.Set("Authorization", "Bearer "+apiKey) // OpenAI Ver.
+	h.Add("api-key", apiKey) // Azure OpenAI Ver.
 
 	conn, _, err := websocket.DefaultDialer.Dial(openAIRealtimeURL, h)
 	return conn, err
